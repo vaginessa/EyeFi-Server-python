@@ -24,7 +24,7 @@ import sys
 import os
 import socket
 import threading
-import StringIO
+import io
 
 import hashlib
 import binascii
@@ -35,16 +35,16 @@ import xml.sax
 from xml.sax.handler import ContentHandler 
 import xml.dom.minidom
 
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-import BaseHTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import http.server
 
-import SocketServer
+import socketserver
 
 import logging
 import optparse
 
 import subprocess
-import Queue
+import queue
 
 
 """
@@ -122,12 +122,12 @@ class EyeFiContentHandler(ContentHandler):
         self.extractedElements[elementName] = content
 
 # Implements an EyeFi server
-class EyeFiServer(SocketServer.ThreadingMixIn, BaseHTTPServer.HTTPServer):
+class EyeFiServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
 
   
   def server_bind(self):
 
-    BaseHTTPServer.HTTPServer.server_bind(self)    
+    http.server.HTTPServer.server_bind(self)    
     self.socket.settimeout(None)
     self.run = True
 
@@ -185,7 +185,7 @@ class EyeFiRequestHandler(BaseHTTPRequestHandler):
     # Loop through all the request headers and pick out ones that are relevant    
     
     eyeFiLogger.debug("Headers received in POST request:")
-    for headerName in self.headers.keys():
+    for headerName in list(self.headers.keys()):
       for headerValue in self.headers.getheaders(headerName):
 
         if( headerName == "soapaction"):
@@ -326,7 +326,7 @@ class EyeFiRequestHandler(BaseHTTPRequestHandler):
   def uploadPhoto(self,postData):
     
     # Take the postData string and work with it as if it were a file object
-    postDataInMemoryFile = StringIO.StringIO(postData)
+    postDataInMemoryFile = io.StringIO(postData)
     
     # Get the content-type header which looks something like this
     # content-type: multipart/form-data; boundary=---------------------------02468ace13579bdfcafebabef00d    
@@ -345,7 +345,7 @@ class EyeFiRequestHandler(BaseHTTPRequestHandler):
     
     # Parse the multipart/form-data
     form = cgi.parse_multipart(postDataInMemoryFile, {"boundary":boundary,"content-disposition":self.headers.getheaders('content-disposition')})
-    eyeFiLogger.debug("Available multipart/form-data: " + str(form.keys()))
+    eyeFiLogger.debug("Available multipart/form-data: " + str(list(form.keys())))
     
     # Parse the SOAPENVELOPE using the EyeFiContentHandler()
     soapEnvelope = form['SOAPENVELOPE'][0]
@@ -604,7 +604,7 @@ def main():
   global options
   (options, args) = optionsParser.parse_args()
   
-  print options
+  print(options)
   
   # Setup the logging that will be used for the rest of the program
   setupLogging(options)

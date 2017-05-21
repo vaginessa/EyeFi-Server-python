@@ -9,4 +9,4 @@ requestMessageFile.write(message)
 requestMessageFile.flush()
 requestMessageFile.close()
 
-print "Issued Eye-Fi reboot command"
+print("Issued Eye-Fi reboot command")
